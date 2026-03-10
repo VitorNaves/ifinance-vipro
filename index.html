@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IFinance ViPRo</title>
+
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Icons (Lucide) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Dexie.js (IndexedDB Database) -->
+    <script src="https://unpkg.com/dexie@4.0.1/dist/dexie.js"></script>
+
+    <!-- Chart.js (Graphical Data) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- PWA: Manifest e Meta Mobile -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#6366F1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="IFinance ViPRo">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="dark-theme">
+    <div class="app-container">
+        <!-- Header -->
+        <header class="topbar glass-panel">
+            <div class="logo">
+                <i data-lucide="wallet" class="logo-icon text-accent"></i>
+                <h1>IFinance <span class="text-accent">ViPRo</span></h1>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-outline" onclick="window.app.openModal('modal-investment')">
+                    <i data-lucide="landmark"></i> Conta / Invest.
+                </button>
+                <button class="btn btn-success" style="background: var(--success); color: white; border: none;"
+                    onclick="window.app.openModal('modal-receita')">
+                    <i data-lucide="arrow-up-circle"></i> Receita
+                </button>
+                <button class="btn btn-danger" style="background: var(--danger); color: white; border: none;"
+                    onclick="window.app.openModal('modal-despesa')">
+                    <i data-lucide="arrow-down-circle"></i> Despesa
+                </button>
+                <button class="btn btn-primary" onclick="window.app.openModal('modal-transaction')"
+                    title="Formulário Manual Avançado">
+                    <i data-lucide="sliders-horizontal"></i> Manual
+                </button>
+            </div>
+        </header>
+
+        <main class="dashboard-content">
+            <!-- Dashboard Timeline Header -->
+            <div class="dashboard-header"
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="font-size: 1.5rem; font-weight: 600;">Visão <span class="text-accent">Mensal</span></h2>
+                <!-- Seletor de Mês com Setas de Navegação -->
+                <div
+                    style="display: flex; align-items: center; gap: 0.5rem; background: var(--glass-bg); padding: 0.4rem 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--glass-border);">
+                    <button id="btn-prev-month" onclick="window.app.changeMonth(-1)" title="Mês Anterior"
+                        style="background: none; border: none; color: rgba(255,255,255,0.7); cursor: pointer; display: flex; align-items: center; padding: 0.25rem 0.5rem; border-radius: 8px; transition: background 0.2s;"
+                        onmouseover="this.style.background='rgba(255,255,255,0.1)'"
+                        onmouseout="this.style.background='none'">
+                        <i data-lucide="chevron-left" style="width: 18px; height: 18px;"></i>
+                    </button>
+                    <div
+                        style="display: flex; align-items: center; gap: 0.5rem; min-width: 160px; justify-content: center;">
+                        <i data-lucide="calendar" class="text-accent"
+                            style="width: 16px; height: 16px; flex-shrink: 0;"></i>
+                        <span id="month-display"
+                            style="font-size: 1rem; font-weight: 600; color: white; white-space: nowrap;"></span>
+                    </div>
+                    <button id="btn-next-month" onclick="window.app.changeMonth(1)" title="Próximo Mês"
+                        style="background: none; border: none; color: rgba(255,255,255,0.7); cursor: pointer; display: flex; align-items: center; padding: 0.25rem 0.5rem; border-radius: 8px; transition: background 0.2s;"
+                        onmouseover="this.style.background='rgba(255,255,255,0.1)'"
+                        onmouseout="this.style.background='none'">
+                        <i data-lucide="chevron-right" style="width: 18px; height: 18px;"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Resumo Mensal (Sobra, Receitas, Despesas, Parcelas) -->
+            <section class="summary-cards">
+                <div class="card glass-panel bg-gradient-earnings">
+                    <div class="card-header">
+                        <h3>Entradas</h3>
+                        <i data-lucide="trending-up" class="icon-success"></i>
+                    </div>
+                    <p class="value text-success" id="val-receitas">R$ 0,00</p>
+                </div>
+
+                <div class="card glass-panel bg-gradient-expenses">
+                    <div class="card-header">
+                        <h3>Saídas Totais</h3>
+                        <i data-lucide="trending-down" class="icon-danger"></i>
+                    </div>
+                    <p class="value text-danger" id="val-saidas">R$ 0,00</p>
+                    <small class="subtitle text-muted" style="font-size: 0.8rem;">Despesas + Parcelas no Mês</small>
+                </div>
+
+                <div class="card glass-panel bg-gradient-net highlight-card">
+                    <div class="card-header">
+                        <h3>Sobra do Mês</h3>
+                        <i data-lucide="activity" class="text-white"></i>
+                    </div>
+                    <p class="value" id="val-sobra" style="transition: color 0.3s;">R$ 0,00</p>
+                    <small class="subtitle" style="color: rgba(255,255,255,0.6);">Entradas - Saídas Totais</small>
+                </div>
+
+                <div class="card glass-panel bg-gradient-patrimony" style="grid-column: span 1;">
+                    <div class="card-header">
+                        <h3>Meu Patrimônio Total</h3>
+                        <i data-lucide="landmark" class="icon-wealth"></i>
+                    </div>
+                    <p class="value text-accent" id="val-patrimonio">R$ 0,00</p>
+                    <small class="subtitle text-muted" style="font-size: 0.8rem;">Soma de Contas e Investimentos</small>
+                </div>
+
+                <div class="card glass-panel bg-gradient-working">
+                    <div class="card-header">
+                        <h3>O Dinheiro a Trabalhar</h3>
+                        <i data-lucide="rocket" class="text-accent" style="color: #4ade80;"></i>
+                    </div>
+                    <p class="value text-success" id="val-rendimento" style="font-size: 1.8rem; font-weight: 700;">+ R$
+                        0,00</p>
+                    <small class="subtitle text-muted" style="font-size: 0.8rem;">Lucro previsto (próximo mês)</small>
+                </div>
+            </section>
+
+            <!-- Dashboard Widgets (Grafico e Lista) -->
+            <section class="dashboard-widgets"
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+                <!-- Grafico -->
+                <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column;">
+                    <h3
+                        style="margin-bottom: 1.5rem; font-size: 1.1rem; font-weight: 600; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;">
+                        Onde está indo o dinheiro?</h3>
+                    <div
+                        style="position: relative; height: 250px; width: 100%; display: flex; justify-content: center;">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Lista Progressos/Vencimentos -->
+                <div class="glass-panel"
+                    style="padding: 1.5rem; display: flex; flex-direction: column; overflow: hidden;">
+                    <h3
+                        style="margin-bottom: 1rem; font-size: 1.1rem; font-weight: 600; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;">
+                        Próximos Vencimentos</h3>
+                    <ul id="upcoming-list" class="upcoming-list"
+                        style="list-style: none; display: flex; flex-direction: column; gap: 0.8rem; overflow-y: auto; max-height: 250px; padding-right: 0.5rem;">
+                        <!-- JS content -->
+                    </ul>
+                </div>
+
+                <!-- Grafico Linha Projeção (Investimentos) -->
+                <div class="glass-panel"
+                    style="padding: 1.5rem; display: flex; flex-direction: column; grid-column: 1 / -1;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; margin-bottom: 1.5rem;">
+                        <h3 style="font-size: 1.1rem; font-weight: 600;">Projeção do Patrimônio (12 Meses)</h3>
+                        <span class="badge badge-cdb" style="font-size: 0.75rem;"><i data-lucide="trending-up"
+                                style="width: 12px; height: 12px; display:inline; margin-right:4px;"></i>Juros
+                            Compostos</span>
+                    </div>
+                    <div style="position: relative; height: 300px; width: 100%;">
+                        <canvas id="projectionChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tabelas de Dados -->
+            <section class="tables-section" style="margin-top: 2rem;">
+                <!-- Tabela de Transações -->
+                <div class="table-container glass-panel">
+                    <div class="table-header">
+                        <h2>Fluxo de Caixa (Transações Diárias)</h2>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="table-transactions">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Descrição</th>
+                                    <th>Categoria</th>
+                                    <th>Tipo</th>
+                                    <th>Fixo</th>
+                                    <th>Valor</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Exemplo de linha que será injetada via JS -->
+                            </tbody>
+                        </table>
+                        <div id="empty-state-transactions" class="empty-state">
+                            <i data-lucide="inbox"></i>
+                            <p>Nenhuma transação registrada no momento.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabela de Parcelamentos -->
+                <div class="table-container glass-panel">
+                    <div class="table-header">
+                        <h2>Parcelamentos Fatura (Cartão)</h2>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="table-installments">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Início (Mês/Ano)</th>
+                                    <th>Progresso</th>
+                                    <th>Valor Total</th>
+                                    <th>Valor da Parcela</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Linhas via JS -->
+                            </tbody>
+                        </table>
+                        <div id="empty-state-installments" class="empty-state">
+                            <i data-lucide="shopping-bag"></i>
+                            <p>Nenhum parcelamento registrado no momento.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabela de Investimentos -->
+                <div class="table-container glass-panel">
+                    <div class="table-header">
+                        <h2>Contas e Investimentos (Patrimônio)</h2>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="table-investments">
+                            <thead>
+                                <tr>
+                                    <th>Instituição</th>
+                                    <th>Tipo de Ativo</th>
+                                    <th>Saldo Atual</th>
+                                    <th>Última Atualização</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Linhas via JS -->
+                            </tbody>
+                        </table>
+                        <div id="empty-state-investments" class="empty-state">
+                            <i data-lucide="piggy-bank"></i>
+                            <p>Nenhuma conta ou investimento registrado.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modais Overlay -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+
+        <!-- Modal Nova Receita (Específico) -->
+        <div id="modal-receita" class="modal-content glass-panel hidden">
+            <div class="modal-header">
+                <h2>Adicionar Receita</h2>
+                <button class="btn-close" onclick="window.app.closeModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <form id="form-receita">
+                <!-- Static Value para Receita -->
+                <input type="hidden" name="tipo" value="Receita">
+                <input type="hidden" name="fixo" value="Não">
+                <input type="hidden" name="categoria" value="Salário/Rendimentos">
+
+                <div class="form-group">
+                    <label>Descrição</label>
+                    <input type="text" name="descricao" placeholder="Ex: Salário de Março" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Valor (R$)</label>
+                        <input type="number" step="0.01" name="valor" placeholder="0.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Data de Recebimento</label>
+                        <input type="date" name="data" id="input-data-receita" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="window.app.closeModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-success"
+                        style="background: var(--success); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 600; cursor: pointer;">Registar
+                        Receita</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Modal Nova Despesa (Inteligente) -->
+        <div id="modal-despesa" class="modal-content glass-panel hidden">
+            <div class="modal-header">
+                <h2>Adicionar Despesa</h2>
+                <button class="btn-close" onclick="window.app.closeModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <form id="form-despesa">
+                <div class="form-group">
+                    <label>Descrição</label>
+                    <input type="text" name="descricao" placeholder="Ex: Conta de Luz, Supermercado..." required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Valor (R$)</label>
+                        <input type="number" step="0.01" name="valor" placeholder="0.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Categoria</label>
+                        <select name="categoria" required>
+                            <option value="Moradia">Moradia</option>
+                            <option value="Alimentação">Alimentação</option>
+                            <option value="Transporte">Transporte</option>
+                            <option value="Lazer">Lazer</option>
+                            <option value="Saúde">Saúde</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Data de Vencimento</label>
+                        <input type="date" name="data" id="input-data-despesa" required>
+                    </div>
+                </div>
+
+                <!-- Toggles / Interruptores -->
+                <div class="form-row" style="align-items: center; margin-top: 0.5rem; gap: 2rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" name="isFixo" id="toggle-fixo"
+                            style="width: 1.2rem; height: 1.2rem; cursor: pointer;">
+                        <span style="font-size: 0.95rem;">Gasto Fixo Mensal?</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" name="isParcelado" id="toggle-parcelado"
+                            style="width: 1.2rem; height: 1.2rem; cursor: pointer;">
+                        <span style="font-size: 0.95rem;">Compra Parcelada?</span>
+                    </label>
+                </div>
+
+                <!-- Campo Dinâmico Condicional -->
+                <div id="wrapper-parcelas" class="form-group hidden"
+                    style="margin-top: 1rem; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 1rem;">
+                    <label class="text-warning">
+                        <i data-lucide="layers"
+                            style="width: 14px; height: 14px; display: inline-block; vertical-align: middle;"></i>
+                        Número de Parcelas
+                    </label>
+                    <input type="number" name="qtdParcelas" id="input-qtd-parcelas" min="2" placeholder="Ex: 10">
+                    <small class="text-muted">Despesa mudará para modo Parcelamento Múltiplo.</small>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="window.app.closeModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-danger"
+                        style="background: var(--danger); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 600; cursor: pointer;">Salvar
+                        Despesa</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Modal Nova Transação (Geral - Legado) -->
+        <div id="modal-transaction" class="modal-content glass-panel hidden">
+            <div class="modal-header">
+                <h2>Adicionar Transação</h2>
+                <button class="btn-close" onclick="window.app.closeModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <form id="form-transaction">
+                <div class="form-group">
+                    <label>Descrição</label>
+                    <input type="text" name="descricao" placeholder="Ex: Salário Janeiro, Padaria..." required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Valor (R$)</label>
+                        <input type="number" step="0.01" name="valor" placeholder="0.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo</label>
+                        <select name="tipo" required>
+                            <option value="Receita">Receita (Entrada)</option>
+                            <option value="Despesa">Despesa (Saída)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Data</label>
+                        <input type="date" name="data" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Gasto Fixo?</label>
+                        <select name="fixo" required>
+                            <option value="Não">Não</option>
+                            <option value="Sim">Sim (ex: Aluguel)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Categoria</label>
+                    <input type="text" name="categoria" placeholder="Ex: Alimentação, Lazer...">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="window.app.closeModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Transação</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Modal Novo Parcelamento -->
+        <div id="modal-installment" class="modal-content glass-panel hidden">
+            <div class="modal-header">
+                <h2>Adicionar Parcelamento</h2>
+                <button class="btn-close" onclick="window.app.closeModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <form id="form-installment">
+                <div class="form-group">
+                    <label>Item</label>
+                    <input type="text" name="item" placeholder="Ex: Smart TV Sala..." required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Valor Total (R$)</label>
+                        <input type="number" step="0.01" id="inst-valor-total" name="valorTotal" placeholder="0.00"
+                            required>
+                    </div>
+                    <div class="form-group">
+                        <label>Qtd Parcelas</label>
+                        <input type="number" id="inst-qtd-parcelas" name="qtdParcelas" min="1" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Valor da Parcela (Calculado Auto)</label>
+                    <input type="text" id="inst-valor-parcela" name="valorParcela" disabled class="input-disabled">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Mês de Início</label>
+                        <input type="month" name="mesInicio" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select name="status" required>
+                            <option value="Ativo">Ativo</option>
+                            <option value="Finalizado">Finalizado</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="window.app.closeModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-secondary">Salvar Parcelamento</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Modal Nova Conta/Investimento -->
+        <div id="modal-investment" class="modal-content glass-panel hidden">
+            <div class="modal-header">
+                <h2>Adicionar Conta / Invest.</h2>
+                <button class="btn-close" onclick="window.app.closeModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <form id="form-investment">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Instituição</label>
+                        <input type="text" name="instituicao" placeholder="Ex: Nubank, Banco Inter..." required>
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo de Ativo</label>
+                        <select name="tipoAtivo" required>
+                            <option value="Conta Corrente">Conta Corrente</option>
+                            <option value="Poupança">Poupança</option>
+                            <option value="CDB">CDB</option>
+                            <option value="Ações">Ações</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Saldo Atual (R$)</label>
+                        <input type="number" step="0.01" name="saldoAtual" placeholder="0.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Taxa Anual (%)</label>
+                        <input type="number" step="0.01" name="taxaAnual" placeholder="Ex: 13.65" value="0">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="width: 100%;">
+                        <label>Última Atualização</label>
+                        <input type="date" name="ultimaAtualizacao" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="window.app.closeModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Conta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- FAB Mobile: Barra Flutuante de Ação Rápida (polegar) -->
+    <nav class="fab-bar" aria-label="Ações Rápidas">
+        <button class="fab-btn fab-invest" onclick="window.app.openModal('modal-investment')"
+            title="Conta / Investimento">
+            <i data-lucide="landmark"></i>
+            <span>Investir</span>
+        </button>
+        <button class="fab-btn fab-receita" onclick="window.app.openModal('modal-receita')" title="Adicionar Receita">
+            <i data-lucide="plus-circle"></i>
+            <span>+ Receita</span>
+        </button>
+        <button class="fab-btn fab-despesa" onclick="window.app.openModal('modal-despesa')" title="Adicionar Despesa">
+            <i data-lucide="minus-circle"></i>
+            <span>- Despesa</span>
+        </button>
+    </nav>
+
+    <!-- Scripts da Aplicação -->
+    <script src="app.js"></script>
+    <script>
+        // Registra Service Worker para modo PWA / Offline
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('IFinance ViPRo: SW registrado', reg.scope))
+                    .catch(err => console.warn('SW não registrado:', err));
+            });
+        }
+    </script>
+</body>
+
+</html>
