@@ -568,6 +568,11 @@ tbody tr:hover {
     transform: scale(1);
     transition: transform var(--transition-fast);
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    /* Bug Fix: permite scroll no mobile quando o conteÃšdo ÃĐ maior que a tela */
+    max-height: 90vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    /* scroll suave no iOS */
 }
 
 .modal-overlay.hidden .modal-content {
@@ -608,6 +613,30 @@ form {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
+}
+
+/* Bug Fix Mobile: Toggle / Checkbox com zona de toque genÃĐrosa */
+.form-row label[style*="cursor: pointer"],
+label[style*="cursor: pointer"] {
+    padding: 0.75rem 0.5rem;
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border);
+    transition: background 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+label[style*="cursor: pointer"]:active {
+    background: rgba(99, 102, 241, 0.15);
+}
+
+/* Aumenta checkboxes para zona de toque mÃ­nima (44px padrÃĢo Apple) */
+input[type="checkbox"] {
+    width: 1.4rem !important;
+    height: 1.4rem !important;
+    accent-color: var(--accent-primary);
+    cursor: pointer;
+    flex-shrink: 0;
 }
 
 .form-group {
@@ -661,7 +690,7 @@ select:focus {
     .app-container {
         padding: 1rem;
         padding-bottom: 90px;
-        /* Espaço para o FAB bar não sobrepor conteúdo */
+        /* EspaÃ§o para o FAB bar nÃĢo sobrepor conteÃšdo */
     }
 
     .topbar {
@@ -690,7 +719,7 @@ select:focus {
 }
 
 /* --- FAB BAR (Floating Action Buttons) --- */
-/* Visível somente em dispositivos móveis */
+/* VisÃ­vel somente em dispositivos mÃģveis */
 .fab-bar {
     display: none;
     /* Esconde no desktop */
@@ -732,7 +761,7 @@ select:focus {
         letter-spacing: 0.3px;
         transition: all 0.15s ease;
         min-height: 58px;
-        /* Zona de toque mínima */
+        /* Zona de toque mÃ­nima */
     }
 
     .fab-btn:active {
