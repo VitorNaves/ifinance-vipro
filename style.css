@@ -545,7 +545,8 @@ tbody tr:hover {
     bottom: 0;
     background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(4px);
-    z-index: 100;
+    z-index: 300;
+    /* Aumentado para ficar acima do FAB Bar (200) */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -760,6 +761,8 @@ select:focus {
     margin-top: 1rem;
     padding-top: 1.5rem;
     border-top: 1px solid var(--glass-border);
+    padding-bottom: 2rem;
+    /* Espaço extra de segurança no celular */
 }
 
 /* Responsive */
