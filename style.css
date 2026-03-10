@@ -568,7 +568,7 @@ tbody tr:hover {
     transform: scale(1);
     transition: transform var(--transition-fast);
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    /* Bug Fix: permite scroll no mobile quando o conteÃšdo ÃĐ maior que a tela */
+    /* Bug Fix: permite scroll no mobile quando o conteúdo é maior que a tela */
     max-height: 90vh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -615,29 +615,106 @@ form {
     gap: 1rem;
 }
 
-/* Bug Fix Mobile: Toggle / Checkbox com zona de toque genÃĐrosa */
-.form-row label[style*="cursor: pointer"],
-label[style*="cursor: pointer"] {
-    padding: 0.75rem 0.5rem;
+/* Responsive */
+@media (max-width: 768px) {
+    .app-container {
+        padding: 1rem;
+        padding-bottom: 90px;
+    }
+
+    .topbar {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+        text-align: center;
+    }
+
+    .header-actions {
+        display: none;
+    }
+
+    /* Substituído pelo FAB */
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .toast-container {
+        bottom: 90px;
+        right: 1rem;
+        left: 1rem;
+    }
+
+    /* ===== BUG FIX 1: Modal como Bottom Sheet no mobile ===== */
+    .modal-overlay {
+        align-items: flex-end;
+        /* Ancora no rodapé */
+        padding: 0;
+    }
+
+    .modal-content {
+        max-width: 100%;
+        border-radius: 24px 24px 0 0;
+        /* Arredondado só em cima */
+        max-height: 92vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 1.5rem 1.25rem;
+        animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+        from {
+            transform: translateY(100%);
+        }
+
+        to {
+            transform: translateY(0);
+        }
+    }
+}
+
+/* ===== BUG FIX 2: Toggles com zona de toque grande ===== */
+.toggle-row {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.toggle-label {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.9rem 1rem;
     border-radius: var(--radius-md);
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.04);
     border: 1px solid var(--glass-border);
-    transition: background 0.2s ease;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: background 0.2s ease, border-color 0.2s ease;
     -webkit-tap-highlight-color: transparent;
+    user-select: none;
 }
 
-label[style*="cursor: pointer"]:active {
+.toggle-label:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.toggle-label:has(.toggle-check:checked) {
     background: rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.5);
+    color: #a5b4fc;
 }
 
-/* Aumenta checkboxes para zona de toque mÃ­nima (44px padrÃĢo Apple) */
-input[type="checkbox"] {
-    width: 1.4rem !important;
-    height: 1.4rem !important;
+.toggle-check {
+    width: 1.3rem;
+    height: 1.3rem;
+    flex-shrink: 0;
     accent-color: var(--accent-primary);
     cursor: pointer;
-    flex-shrink: 0;
 }
+
 
 .form-group {
     display: flex;
@@ -690,7 +767,7 @@ select:focus {
     .app-container {
         padding: 1rem;
         padding-bottom: 90px;
-        /* EspaÃ§o para o FAB bar nÃĢo sobrepor conteÃšdo */
+        /* Espaço para o FAB bar não sobrepor conteúdo */
     }
 
     .topbar {
@@ -719,7 +796,7 @@ select:focus {
 }
 
 /* --- FAB BAR (Floating Action Buttons) --- */
-/* VisÃ­vel somente em dispositivos mÃģveis */
+/* Visível somente em dispositivos móveis */
 .fab-bar {
     display: none;
     /* Esconde no desktop */
@@ -761,7 +838,7 @@ select:focus {
         letter-spacing: 0.3px;
         transition: all 0.15s ease;
         min-height: 58px;
-        /* Zona de toque mÃ­nima */
+        /* Zona de toque mínima */
     }
 
     .fab-btn:active {
